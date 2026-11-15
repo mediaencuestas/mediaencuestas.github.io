@@ -1,0 +1,29 @@
+{
+  "_ayuda": "Ajustes del sistema. Puedes editar este fichero desde la web de GitHub (icono del lápiz).",
+
+  "wikipedia_pagina": "Opinion_polling_for_the_2026_Spanish_general_election",
+
+  "excluir_de_la_media": ["EM-Analytics"],
+  "_excluir_de_la_media": "Casas que se guardan en la base pero no cuentan en la media (EM-Analytics es un panel, no una encuesta). Para incluirla, deja la lista vacía: []",
+
+  "no_proponer": ["PP", "PSOE", "Vox", "Sumar", "KeyData"],
+  "_no_proponer": "Casas que el lector de Wikipedia ignora siempre: encuestas encargadas por partidos y KeyData, que republica a otras casas. Las reinterpretaciones del CIS («CIS (Target Point)», etc.) también se ignoran siempre.",
+
+  "alias_casas": {"Key Data": "KeyData", "Invymark": "InvyMark", "EM Analytics": "EM-Analytics", "Sociométrica": "SocioMétrica"},
+
+  "media": {
+    "vida_media_dias": 14,
+    "decaimiento_casa": 0.5,
+    "techo_muestra": 2500,
+    "muestra_referencia": 1000,
+    "edad_maxima_dias": 90,
+    "ventana_simple_dias": 28,
+    "minimo_encuestas": 3,
+    "inicio": "2023-08-01"
+  },
+
+  "veda": {"desde": "2026-11-24", "hasta": "2026-11-29"},
+  "_veda": "LOREG art. 69.7: no se publican encuestas los cinco días anteriores a la votación. En estas fechas no se proponen encuestas nuevas ni se actualiza la web (se mantiene la última versión publicada). El 29 se incluye por prudencia hasta el cierre de los colegios.",
+
+  "simulaciones": 10000
+}
