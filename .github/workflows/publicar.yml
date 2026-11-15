@@ -1,0 +1,76 @@
+name: Calcular y publicar
+
+# Cada vez que cambia la base (al aprobar encuestas) o la configuración:
+# recalcula medias, escaños y simulaciones y publica los JSON en GitHub Pages.
+on:
+  push:
+    branches: [main]
+    paths: ["datos/**", "scripts/**", "config.json", ".github/workflows/publicar.yml"]
+  workflow_dispatch:
+    inputs:
+      forzar:
+        description: "Publicar aunque estemos en el periodo de veda (no recomendado)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  calcular:
+    runs-on: ubuntu-latest
+    outputs:
+      publicar: ${{ steps.veda.outputs.publicar }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Comprobar la veda de la LOREG
+        id: veda
+        run: |
+          if python -c "import sys; sys.path.insert(0,'scripts'); from comun import en_veda; sys.exit(0 if en_veda() else 1)" && [ "${{ inputs.forzar }}" != "true" ]; then
+            echo "Periodo de veda: no se publica. La web mantiene la última versión."
+            echo "publicar=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "publicar=si" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Media de encuestas
+        if: steps.veda.outputs.publicar == 'si'
+        run: python scripts/media.py
+
+      - name: Escaños y simulaciones
+        if: steps.veda.outputs.publicar == 'si'
+        run: python scripts/proyeccion.py
+
+      - name: Ficheros para la web
+        if: steps.veda.outputs.publicar == 'si'
+        run: python scripts/publicar.py
+
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.veda.outputs.publicar == 'si'
+        with:
+          path: public
+
+  desplegar:
+    needs: calcular
+    if: needs.calcular.outputs.publicar == 'si'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
