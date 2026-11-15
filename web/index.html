@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Media de encuestas · Elecciones generales 29-N</title>
+<meta name="description" content="Media ponderada de encuestas y proyección de escaños para las elecciones generales del 29-N.">
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<style>
+:root {
+  --bg: #faf9f6; --panel: #ffffff; --fg: #1f1e1c; --muted: #6b6862; --line: #e6e3dc;
+  --grid: #eeebe5; --axis: #cfcbc2; --chart-muted: #c9c5bc; --ref: #9b968c;
+  --serif: Georgia, "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1b1a18; --panel: #242320; --fg: #f1efe9; --muted: #a9a59c; --line: #3a3833;
+    --grid: #2f2d29; --axis: #4a4741; --chart-muted: #5b5850; --ref: #8a867d; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.45; }
+.mx { max-width: 1100px; margin: 0 auto; padding: 28px 18px 60px; display: flex; flex-direction: column; gap: 28px; }
+h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.7rem, 4vw, 2.4rem); margin: 0; line-height: 1.15; }
+h2 { font-size: 1.2rem; font-weight: 600; margin: 0 0 4px; }
+h3 { font-size: 1rem; font-weight: 600; margin: 0 0 8px; }
+.lede { font-size: 1.05rem; margin: 10px 0 0; max-width: 62ch; }
+.sub { color: var(--muted); font-size: .85rem; margin: 0 0 14px; max-width: 70ch; }
+.upd { color: var(--muted); font-size: .8rem; margin-top: 6px; }
+.aviso { background: #fff4d6; color: #5a4300; border: 1px solid #f0d78c; border-radius: var(--r); padding: 10px 14px; font-size: .9rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--pc); border-radius: var(--r); padding: 16px; }
+.card-name { font-size: .85rem; color: var(--muted); }
+.card-val { font-family: var(--serif); font-size: 2.4rem; line-height: 1.1; font-variant-numeric: tabular-nums; margin: 4px 0; }
+.card-meta { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.5; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-bottom: 12px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.seg button { font: inherit; font-size: .82rem; background: transparent; color: var(--muted); border: 0; padding: 6px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.legend button { font: inherit; font-size: .82rem; display: inline-flex; align-items: center; gap: 6px; background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.legend button::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--pc); }
+.legend button[aria-pressed="false"] { opacity: .4; }
+.chart { position: relative; min-height: 340px; }
+.chart svg text { fill: var(--muted); font-size: 12px; font-family: var(--sans); }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,.12); border-radius: 8px; padding: 8px 10px; font-size: .8rem; font-variant-numeric: tabular-nums; min-width: 150px; z-index: 2; }
+.tip table { border-collapse: collapse; width: 100%; } .tip td { padding: 1px 4px; } .tip td:last-child { text-align: right; }
+.scroll { overflow: auto; max-height: 520px; border: 1px solid var(--line); border-radius: var(--r); }
+.ox { overflow-x: auto; }
+table.t { border-collapse: collapse; width: 100%; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.t th, .t td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.t th:first-child, .t td:first-child, .t .l { text-align: left; }
+.t thead th { position: sticky; top: 0; background: var(--panel); font-weight: 600; z-index: 1; }
+.t tr.fuera td { color: var(--muted); }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--pc); margin-right: 6px; }
+.muted { color: var(--muted); }
+.explica { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+.explica p, .explica li { max-width: 72ch; }
+details summary { cursor: pointer; font-weight: 600; }
+details p, details li { color: var(--muted); max-width: 72ch; }
+details.panel > summary { font-size: 1.05rem; }
+input.buscar { font: inherit; font-size: .85rem; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); color: var(--fg); margin-bottom: 10px; width: min(320px, 100%); }
+footer { color: var(--muted); font-size: .8rem; }
+footer a { color: inherit; }
+</style>
+</head>
+<body>
+<div class="mx">
+  <header>
+    <h1>Media de encuestas · Elecciones generales 29-N</h1>
+    <p class="lede" id="resumen">Cargando…</p>
+    <p class="upd" id="actualizado"></p>
+  </header>
+
+  <div class="aviso" id="veda" hidden>Periodo de veda electoral (art. 69.7 de la LOREG): no se publican encuestas nuevas hasta el cierre de los colegios. Se muestra la última media publicada.</div>
+
+  <section class="cards" id="tarjetas" aria-label="Principales partidos"></section>
+
+  <section class="panel" id="evolucion">
+    <h2>Evolución desde el 23J</h2>
+    <p class="sub">Cada línea es la media diaria; los puntos son las encuestas individuales. Pasa el cursor o el dedo por el gráfico para ver los valores de cada día.</p>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Tipo de media">
+        <button type="button" data-mode="pond" aria-pressed="true">Ponderada</button>
+        <button type="button" data-mode="simple" aria-pressed="false">Simple 28 días</button>
+      </div>
+      <div class="seg" role="group" aria-label="Periodo">
+        <button type="button" data-range="0" aria-pressed="true">Todo</button>
+        <button type="button" data-range="365" aria-pressed="false">1 año</button>
+        <button type="button" data-range="180" aria-pressed="false">6 meses</button>
+        <button type="button" data-range="90" aria-pressed="false">3 meses</button>
+      </div>
+    </div>
+    <div class="legend" id="leyenda" role="group" aria-label="Partidos en el gráfico"></div>
+    <div class="chart" id="grafico-evolucion"></div>
+  </section>
+
+  <section class="panel" id="escanos">
+    <h2>Proyección de escaños</h2>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Base del reparto por provincias">
+        <button type="button" data-esc="resultados" aria-pressed="false">Solo resultados 23J</button>
+        <button type="button" data-esc="micro" aria-pressed="true">Resultados 23J + microdatos</button>
+      </div>
+    </div>
+    <p class="sub">La barra son los escaños con la media de hoy; la línea fina, la horquilla probable si las encuestas fallan como otras veces.</p>
+    <p class="lede" id="escanos-frase"></p>
+    <div class="chart" id="grafico-escanos" style="min-height:300px"></div>
+    <div class="explica">
+      <h3>Bloques y mayoría absoluta (176)</h3>
+      <div class="ox"><table class="t"><thead><tr><th>Bloque</th><th>Escaños</th><th>Horquilla 90 %</th><th>Llega a 176 (% simulaciones)</th></tr></thead><tbody id="bloques"></tbody></table></div>
+    </div>
+    <details class="explica">
+      <summary>Cómo se calculan los escaños</summary>
+      <p>En cuatro pasos:</p>
+      <ol>
+        <li><b>Se parte del 23J.</b> Lo que votó cada provincia en 2023 y quién se presenta ahora en cada una.</li>
+        <li><b>Se mira dónde sube o baja cada partido.</b> Las encuestas con microdatos (CIS, 40dB y More in Common) permiten comparar a los votantes de cada partido hoy con los que tuvo en 2023, comunidad por comunidad. Así se ve si un partido crece más en unas zonas que en otras. Con «Solo resultados 23J» este paso no se hace: todos suben o bajan igual en todas partes.</li>
+        <li><b>Se ajusta a la media de encuestas.</b> Cada partido se sube o se baja en todas las provincias hasta que el total de España coincide con la media. Los microdatos solo dicen dónde es más fuerte cada partido; cuánto vota en total lo marca la media.</li>
+        <li><b>Se reparten los escaños.</b> Ley D'Hondt en cada provincia, con el mínimo del 3 % y los escaños de 2026 (Madrid 38, Cádiz 8). Con los votos reales, este cálculo da exactamente los escaños de 2019 y 2023.</li>
+      </ol>
+      <p><b>FA + aliados y Podemos.</b> Se calculan primero juntos, como el espacio que tuvo Sumar en 2023, y luego se reparten. Cuánto pesa Podemos en cada sitio se saca de las encuestas, pero en ellas hay pocos votantes de Podemos; donde hay pocos, se completa con dónde sacó votos Podemos en las europeas de 2024, su único resultado propio. Las europeas no se usan para FA + aliados.</p>
+      <p><b>La horquilla.</b> Las encuestas fallan. El cálculo se repite 10.000 veces moviendo la media lo que ha fallado en elecciones anteriores (unos 2 puntos en los partidos grandes); la horquilla recoge el 90 % de esos resultados.</p>
+      <p class="sub">Detalles: el CIS combina su preelectoral de octubre (45.074 entrevistas) y los barómetros de enero a septiembre (32.170, con medio peso porque son más antiguos); 40dB aporta siete oleadas y More in Common cuatro. Cada encuestadora cuenta lo mismo, y los datos de un territorio pesan más cuantas más entrevistas hay. UPN cuenta con el PP; SALF parte de su mapa en las europeas y Adelante Andalucía del voto de Sumar en Andalucía. Donde Podemos va dentro de otra lista, todo es FA + aliados.</p>
+    </details>
+  </section>
+
+  <section class="panel" id="resto">
+    <h2>Resto de partidos</h2>
+    <p class="sub">Media ponderada en la fecha de corte, media simple de 28 días, cambio frente a hace 28 días y resultado del 23J (voto válido).</p>
+    <div class="ox"><table class="t"><thead><tr><th>Partido</th><th>Ponderada</th><th>Simple 28 d</th><th>Cambio 28 d</th><th>23J</th></tr></thead><tbody id="tabla-resto"></tbody></table></div>
+  </section>
+
+  <section class="panel" id="encuestas">
+    <h2>Todas las encuestas</h2>
+    <p class="sub"><span id="n-encuestas">—</span> encuestas de <span id="n-casas">—</span> casas, de la más reciente a la más antigua. FA + aliados es la cifra de Sumar hasta octubre de 2026; desde entonces, Frente Amplio, Front Valencià, UPC y Ara Més-Front Ampli. En gris, las que no cuentan en la media.</p>
+    <input class="buscar" id="buscar" type="search" placeholder="Buscar encuestadora o medio…" aria-label="Buscar encuestadora o medio">
+    <div class="scroll"><table class="t"><thead><tr><th>Encuestadora</th><th class="l">Medio</th><th>Fin de campo</th><th>Muestra</th><th>PP</th><th>PSOE</th><th>Vox</th><th>FA</th><th>Podemos</th><th>SALF</th></tr></thead><tbody id="tabla-encuestas"></tbody></table></div>
+  </section>
+
+  <details class="panel" id="metodologia">
+    <summary>Metodología y criterios</summary>
+    <div class="explica">
+      <h3>Cuánto pesa cada encuestadora hoy</h3>
+      <p class="sub">Proporción del peso total de cada casa en la media ponderada frente a su proporción en la media simple de 28 días. La ponderación frena a las casas que publican muy a menudo y suma un poco por muestra.</p>
+      <div class="chart" id="grafico-pesos" style="min-height:200px"></div>
+    </div>
+    <div class="explica">
+      <h3>Por qué unas encuestas pesan más que otras</h3>
+      <p>Cada encuesta recibe un peso que es el producto de tres factores:</p>
+      <ul>
+        <li><b>Recencia.</b> El peso se reduce a la mitad cada 14 días desde el punto medio del trabajo de campo. Una encuesta de hace dos semanas cuenta la mitad que una de hoy, y una de hace dos meses casi nada.</li>
+        <li><b>Frecuencia.</b> Dentro de cada casa, la ola más reciente pesa 1, la anterior 0,5, la siguiente 0,25… Por mucho que publique, una casa nunca suma más del doble del peso de una sola encuesta suya.</li>
+        <li><b>Muestra.</b> El peso crece con la raíz de la muestra y se detiene en 2.500 entrevistas. Una encuesta de 2.500 pesa 1,6 veces una de 1.000, y una de 8.000 pesa lo mismo que una de 2.500.</li>
+      </ul>
+      <p id="top-casa"></p>
+    </div>
+    <div class="explica">
+      <h3>¿Sigue siendo fiable la media si una casa pesa mucho?</h3>
+      <p>Pesar más no es lo mismo que mover más la media. Lo que mueve la media es el peso multiplicado por cuánto se aparta esa casa de las demás: una casa con mucho peso que dice lo mismo que el resto apenas cambia el resultado. Para comprobarlo, la tabla quita cada casa por separado y vuelve a calcular la media.</p>
+      <p id="robustez-frase"></p>
+      <p id="neff"></p>
+      <div class="ox"><table class="t"><thead><tr><th>Encuestadora</th><th>Peso (%)</th><th>Olas en 90 días</th><th>Días desde la última</th><th>PP</th><th>PSOE</th><th>Vox</th><th>FA</th></tr></thead><tbody id="tabla-robustez"></tbody></table></div>
+      <p class="sub">Las cuatro últimas columnas son el cambio, en puntos, de la media ponderada de cada partido si se quitara esa casa.</p>
+    </div>
+    <div class="explica">
+      <h3>Fuentes y criterios</h3>
+      <p><b>Fuente.</b> Encuestas nacionales de intención de voto al Congreso recopiladas en Wikipedia («Opinion polling for the 2026 Spanish general election»), desde el 25 de julio de 2023. Las encuestas nuevas se leen de la página tres veces al día y entran en la media tras revisarlas.</p>
+      <ul>
+        <li>Solo la estimación propia del CIS: fuera las reinterpretaciones de otras firmas (Target Point, Opina 360, Ateneo del Dato…).</li>
+        <li>Fuera las encuestas encargadas por partidos (PP, PSOE, Vox, Sumar) y KeyData, que republica a otras casas.</li>
+        <li>Fuera, por ahora, EM-Analytics/Electomanía (ElectoPanel): es un panel, no una encuesta.</li>
+        <li>Trackings acumulados (misma casa, mismo inicio de campo): solo la ola más reciente.</li>
+        <li><b>FA + aliados</b> = Frente Amplio, Front Valencià (Compromís), Unidas por Canarias y Ara Més-Front Ampli. En las tablas anteriores a octubre de 2026 es la cifra de Sumar. Cuando una casa publica el Front Valencià por separado, se suma; UPC y Ara Més van dentro de la cifra de FA que da cada casa.</li>
+      </ul>
+      <p><b>Media simple.</b> Promedio sin pesos de las encuestas con fin de campo en los últimos 28 días.</p>
+      <p><b>Media ponderada.</b> Cada encuesta pesa la recencia × la frecuencia × la muestra, como se explica arriba; se ignoran las de más de 90 días. Todavía no se corrige el sesgo de cada casa ni se pondera por acierto histórico. Un partido necesita al menos 3 encuestas para tener media. Los porcentajes son sobre voto válido, tal como los publica cada casa.</p>
+      <p><b>Veda.</b> Del 24 al 29 de noviembre no se incorporan encuestas nuevas (art. 69.7 de la LOREG).</p>
+    </div>
+  </details>
+
+  <footer>Datos: <a href="datos/">ficheros JSON</a> · <a href="datos.html">listado de ficheros</a></footer>
+</div>
+
+<script>
+(async function () {
+  const DAY = 86400000;
+  const PRINC = ['PP', 'PSOE', 'VOX', 'FA'];
+  const loc = d3.timeFormatLocale({ dateTime: '%A, %e de %B de %Y, %X', date: '%d/%m/%Y', time: '%H:%M:%S', periods: ['AM', 'PM'],
+    days: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'], shortDays: ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'],
+    months: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
+    shortMonths: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'] });
+  const fmtD = loc.utcFormat('%-d %b %Y');
+  const fmtDL = loc.utcFormat('%-d de %B de %Y');
+  const parse = (s) => new Date(s + 'T00:00:00Z');
+  const isNum = (v) => v !== null && v !== undefined && v !== '' && !isNaN(+v);
+  const f1 = (v) => isNum(v) ? d3.format('.1f')(+v).replace('.', ',') : '–';
+  const fS = (v) => isNum(v) ? ((+v > 0.05 ? '+' : +v < -0.05 ? '−' : '±') + d3.format('.1f')(Math.abs(+v)).replace('.', ',')) : '–';
+  const f2S = (v) => isNum(v) ? ((+v > 0.005 ? '+' : +v < -0.005 ? '−' : '±') + d3.format('.2f')(Math.abs(+v)).replace('.', ',')) : '–';
+  const el = (id) => document.getElementById(id);
+  const get = (f) => fetch('datos/' + f + '?t=' + Date.now(), { cache: 'no-store' }).then((r) => r.json());
+
+  let D;
+  try {
+    const [hoy, medias, encuestas, escanos, pesos, partidos, estado] = await Promise.all(
+      ['hoy.json', 'medias.json', 'encuestas.json', 'escanos.json', 'pesos.json', 'partidos.json', 'estado.json'].map(get));
+    D = { hoy, medias, encuestas, escanos, pesos, partidos, estado };
+  } catch (e) {
+    el('resumen').textContent = 'No se pudieron cargar los datos. Vuelve a intentarlo en unos minutos.';
+    return;
+  }
+  const C = {}, N = {};
+  D.partidos.forEach((p) => { C[p.party] = p.color; N[p.party] = p.nombre; });
+  const S = { mode: 'pond', range: 0, shown: new Set(['PP', 'PSOE', 'VOX', 'FA', 'PODEMOS', 'SALF']), esc: 'micro' };
+
+  // cabecera
+  const fecha = D.estado.fecha_media;
+  const top = D.hoy.filter((r) => isNum(r.hoy)).sort((a, b) => b.hoy - a.hoy);
+  el('resumen').innerHTML = `Media ponderada a ${fmtDL(parse(fecha))}: <b>${N[top[0].party]}</b> encabeza con <b>${f1(top[0].hoy)} %</b>, ${f1(top[0].hoy - top[1].hoy)} puntos por delante de ${N[top[1].party]} (<b>${f1(top[1].hoy)} %</b>).`;
+  const act = new Date(D.estado.actualizado);
+  el('actualizado').textContent = 'Actualizado el ' + act.toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Madrid' }) +
+    ' · ' + D.estado.encuestas_en_media + ' encuestas de ' + D.estado.casas + ' casas en la base';
+  el('veda').hidden = !D.estado.en_veda;
+
+  // tarjetas
+  el('tarjetas').innerHTML = PRINC.map((p) => {
+    const r = D.hoy.find((x) => x.party === p);
+    const tt = p === 'FA' ? ' title="Frente Amplio, Front Valencià, UPC y Ara Més-Front Ampli"' : '';
+    return `<div class="card" style="--pc:${C[p]}"><div class="card-name"${tt}>${N[p]}</div><div class="card-val">${f1(r.hoy)} %</div>
+      <div class="card-meta"><div>${fS(r.cambio28)} en 28 días</div><div>${fS(r.vs23j)} vs. 23J (${f1(r.r23j)} %)</div></div></div>`;
+  }).join('');
+
+  // leyenda
+  const ley = el('leyenda');
+  ['PP', 'PSOE', 'VOX', 'FA', 'PODEMOS', 'SALF', 'ERC', 'JUNTS'].forEach((p) => {
+    const b = document.createElement('button'); b.type = 'button'; b.style.setProperty('--pc', C[p]); b.textContent = N[p];
+    b.setAttribute('aria-pressed', String(S.shown.has(p)));
+    b.onclick = () => { S.shown.has(p) ? S.shown.delete(p) : S.shown.add(p); b.setAttribute('aria-pressed', String(S.shown.has(p))); drawTrend(); };
+    ley.append(b);
+  });
+  document.querySelectorAll('[data-mode]').forEach((b) => b.onclick = () => { S.mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); drawTrend(); });
+  document.querySelectorAll('[data-range]').forEach((b) => b.onclick = () => { S.range = +b.dataset.range; document.querySelectorAll('[data-range]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); drawTrend(); });
+
+  const enMedia = D.encuestas.filter((r) => r.en_media);
+
+  function drawTrend() {
+    const box = el('grafico-evolucion'); box.innerHTML = '';
+    const W = box.clientWidth || 700, H = Math.max(320, Math.min(460, W * 0.55));
+    let rows = D.medias.map((r) => Object.assign({ t: parse(r.date) }, r));
+    const lastT = rows[rows.length - 1].t;
+    if (S.range) rows = rows.filter((r) => r.t >= new Date(lastT - S.range * DAY));
+    const t0 = rows[0].t;
+    const shown = [...S.shown];
+    const key = (p) => S.mode === 'pond' ? p : p + '_simple';
+    const polls = enMedia.map((r) => ({ t: parse(r.end), r })).filter((o) => o.t >= t0);
+    let ymax = 5;
+    shown.forEach((p) => { ymax = Math.max(ymax, d3.max(rows, (r) => r[key(p)]) || 0); polls.forEach((o) => { if (isNum(o.r[p])) ymax = Math.max(ymax, +o.r[p]); }); });
+    const y = d3.scaleLinear().domain([0, Math.ceil(ymax / 5) * 5]).range([H - 28, 10]);
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Evolución de la media de encuestas por partido');
+    const gy = svg.append('g').call(d3.axisLeft(y).ticks(6).tickFormat((v) => v + ' %'));
+    let ml = 0; gy.selectAll('text').each(function () { ml = Math.max(ml, this.getComputedTextLength()); }); ml += 14;
+    let mr = 0; { const tmp = svg.append('text').style('font-weight', 600); shown.forEach((p) => { tmp.text('00,0 ' + N[p].split(' ')[0]); mr = Math.max(mr, tmp.node().getComputedTextLength()); }); tmp.remove(); } mr += 14;
+    const x = d3.scaleUtc().domain([t0, lastT]).range([ml, W - mr]);
+    gy.attr('transform', `translate(${ml},0)`).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('.tick line').attr('x2', W - mr - ml).style('stroke', 'var(--grid)'));
+    const span = (lastT - t0) / DAY, fmtX = span > 400 ? loc.utcFormat('%b %Y') : loc.utcFormat('%-d %b');
+    svg.append('g').attr('transform', `translate(0,${H - 28})`).call(d3.axisBottom(x).ticks(Math.max(3, Math.floor(W / 120))).tickFormat(fmtX)).call((g) => g.selectAll('line,path').style('stroke', 'var(--axis)'));
+    const gp = svg.append('g');
+    shown.forEach((p) => gp.selectAll(null).data(polls.filter((o) => isNum(o.r[p]))).join('circle').attr('cx', (o) => x(o.t)).attr('cy', (o) => y(+o.r[p])).attr('r', 1.8).style('fill', C[p]).style('opacity', .25));
+    const ends = [];
+    shown.forEach((p) => {
+      svg.append('path').datum(rows).attr('d', d3.line().defined((r) => r[key(p)] != null).x((r) => x(r.t)).y((r) => y(r[key(p)]))).style('fill', 'none').style('stroke', C[p]).style('stroke-width', 2.2);
+      const lr = [...rows].reverse().find((r) => r[key(p)] != null); if (lr) ends.push({ p, v: lr[key(p)], y: y(lr[key(p)]) });
+    });
+    ends.sort((a, b) => a.y - b.y); for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
+    svg.append('g').selectAll('text').data(ends).join('text').attr('x', W - mr + 6).attr('y', (d) => d.y + 4).text((d) => f1(d.v) + ' ' + N[d.p].split(' ')[0]).style('fill', (d) => C[d.p]).style('font-weight', 600);
+    const rule = svg.append('line').attr('y1', 10).attr('y2', H - 28).style('stroke', 'var(--ref)').style('opacity', 0);
+    const tip = d3.select(box).append('div').attr('class', 'tip').style('display', 'none');
+    const bis = d3.bisector((r) => r.t).center;
+    const move = (ev) => {
+      const [px] = d3.pointer(ev, svg.node()); const sx = px * (W / (svg.node().getBoundingClientRect().width || W));
+      const r = rows[bis(rows, x.invert(sx))]; if (!r) return;
+      rule.attr('x1', x(r.t)).attr('x2', x(r.t)).style('opacity', 1);
+      const items = shown.map((p) => ({ p, v: r[key(p)] })).filter((d) => d.v != null).sort((a, b) => b.v - a.v);
+      tip.style('display', null).html('');
+      tip.append('div').style('font-weight', 600).style('margin-bottom', '4px').text(fmtD(r.t) + (S.mode === 'pond' ? ' · ponderada' : ' · simple 28 d'));
+      const tb = tip.append('table');
+      items.forEach((d) => { const tr = tb.append('tr'); const td = tr.append('td'); td.append('span').attr('class', 'dot').style('--pc', C[d.p]); td.append('span').text(N[d.p]); tr.append('td').text(f1(d.v)); });
+      const tw = tip.node().offsetWidth, cw = box.clientWidth, lx = x(r.t) * (cw / W);
+      tip.style('left', (lx + 12 + tw > cw ? Math.max(0, lx - tw - 12) : lx + 12) + 'px').style('top', '20px');
+    };
+    svg.append('rect').attr('x', ml).attr('y', 0).attr('width', W - mr - ml).attr('height', H - 28).style('fill', 'transparent')
+      .on('pointermove', move).on('pointerdown', move).on('pointerleave', () => { tip.style('display', 'none'); rule.style('opacity', 0); });
+  }
+
+  // escaños
+  document.querySelectorAll('[data-esc]').forEach((b) => b.onclick = () => { S.esc = b.dataset.esc; document.querySelectorAll('[data-esc]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); drawSeats(); });
+  function drawSeats() {
+    const E = D.escanos[S.esc];
+    const pv = E.bloques.find((r) => r.bloque === 'PP + Vox'), inv = E.bloques.find((r) => r.bloque === 'Bloque de la investidura de 2023');
+    el('escanos-frase').innerHTML = `Con la media del ${fmtD(parse(D.escanos.fecha_media))}, PP y Vox sumarían <b>${pv.escanos}</b> escaños, entre <b>${pv.p05}</b> y <b>${pv.p95}</b> en el 90 % de las simulaciones, y ${pv.prob176 >= 50 ? 'llegarían' : 'solo llegarían'} a la mayoría absoluta en el <b>${f1(pv.prob176)} %</b> de ellas.` +
+      (inv ? ` El bloque de la investidura de 2023 se quedaría en <b>${inv.escanos}</b>.` : '');
+    el('bloques').innerHTML = E.bloques.map((r) => `<tr><td><div>${r.bloque}</div><div class="muted">${r.partidos}</div></td><td>${r.escanos}</td><td>${r.p05}–${r.p95}</td><td>${f1(r.prob176)}</td></tr>`).join('');
+    const box = el('grafico-escanos'); box.innerHTML = '';
+    const rows = E.partidos.filter((r) => r.escanos > 0 || r.p95 > 0).sort((a, b) => b.escanos - a.escanos || b.voto - a.voto);
+    const W = box.clientWidth || 600, rh = 26, H = rows.length * rh + 30;
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Escaños proyectados por partido con su horquilla del 90 %');
+    const tmp = svg.append('g'); let ml = 0, mr = 0;
+    rows.forEach((r) => { ml = Math.max(ml, tmp.append('text').text(r.nombre).node().getComputedTextLength()); mr = Math.max(mr, tmp.append('text').style('font-weight', 600).text(`${r.escanos} (${r.p05}–${r.p95})`).node().getComputedTextLength()); });
+    tmp.remove(); ml += 12; mr += 14;
+    const x = d3.scaleLinear().domain([0, d3.max(rows, (r) => r.p95)]).nice().range([ml, W - mr]);
+    svg.append('g').attr('transform', `translate(0,${H - 22})`).call(d3.axisBottom(x).ticks(Math.max(3, Math.floor(W / 110)))).call((g) => g.selectAll('line,path').style('stroke', 'var(--axis)'));
+    const tip = d3.select(box).append('div').attr('class', 'tip').style('display', 'none');
+    rows.forEach((r, i) => {
+      const y0 = 6 + i * rh, g = svg.append('g');
+      g.append('text').attr('x', ml - 8).attr('y', y0 + 13).attr('text-anchor', 'end').text(r.nombre);
+      g.append('rect').attr('x', ml).attr('y', y0 + 3).attr('height', 14).attr('width', Math.max(0, x(r.escanos) - ml)).style('fill', C[r.party]);
+      g.append('line').attr('x1', x(r.p05)).attr('x2', x(r.p95)).attr('y1', y0 + 10).attr('y2', y0 + 10).style('stroke', 'var(--fg)').style('stroke-width', 1.5);
+      [r.p05, r.p95].forEach((v) => g.append('line').attr('x1', x(v)).attr('x2', x(v)).attr('y1', y0 + 5).attr('y2', y0 + 15).style('stroke', 'var(--fg)').style('stroke-width', 1.5));
+      g.append('text').attr('x', x(Math.max(r.p95, r.escanos)) + 6).attr('y', y0 + 14).text(`${r.escanos} (${r.p05}–${r.p95})`).style('font-weight', 600).style('fill', 'var(--fg)');
+      g.append('rect').attr('x', 0).attr('y', y0).attr('width', W).attr('height', rh).style('fill', 'transparent')
+        .on('pointermove pointerdown', (ev) => {
+          const [px, py] = d3.pointer(ev, box);
+          tip.style('display', null).html(`<div style="font-weight:600">${r.nombre}</div><div>Voto en la media: ${f1(r.voto)} %</div><div>Escaños con la media: ${r.escanos}</div><div>Horquilla 90 %: ${r.p05}–${r.p95}</div>`);
+          const tw = tip.node().offsetWidth; tip.style('left', Math.max(0, Math.min(px + 12, box.clientWidth - tw)) + 'px').style('top', (py + 12) + 'px');
+        }).on('pointerleave', () => tip.style('display', 'none'));
+    });
+  }
+
+  // resto de partidos
+  el('tabla-resto').innerHTML = D.hoy.filter((r) => !PRINC.includes(r.party)).map((r) =>
+    `<tr><td><span class="dot" style="--pc:${C[r.party]}"></span>${r.nombre}</td><td>${f1(r.hoy)}</td><td>${f1(r.simple)}</td><td>${fS(r.cambio28)}</td><td>${f1(r.r23j)}</td></tr>`).join('');
+
+  // todas las encuestas
+  el('n-encuestas').textContent = d3.format(',')(D.encuestas.length).replace(',', '.');
+  el('n-casas').textContent = new Set(D.encuestas.map((r) => r.firm)).size;
+  const fdate = d3.utcFormat('%d-%m-%Y');
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function drawPolls(q) {
+    q = (q || '').toLowerCase();
+    el('tabla-encuestas').innerHTML = D.encuestas.filter((r) => !q || (r.firm + ' ' + (r.media || '')).toLowerCase().includes(q)).map((r) =>
+      `<tr class="${r.en_media ? '' : 'fuera'}" title="${r.en_media ? '' : 'No cuenta en la media'}"><td>${esc(r.firm)}</td><td class="l muted">${esc(r.media)}</td><td>${fdate(parse(r.end))}</td><td>${isNum(r.n) ? r.n : '?'}</td>` +
+      ['PP', 'PSOE', 'VOX', 'FA', 'PODEMOS', 'SALF'].map((p) => `<td>${f1(r[p])}</td>`).join('') + '</tr>').join('');
+  }
+  el('buscar').addEventListener('input', (e) => drawPolls(e.target.value));
+
+  // metodología: pesos y robustez
+  const P = D.pesos;
+  const t0 = P.robustez[0], big = [...P.robustez].sort((a, b) => b.max - a.max)[0];
+  el('top-casa').innerHTML = `Hoy la casa que más pesa es <b>${esc(t0.firm)}</b>, con el <b>${f1(t0.peso)} %</b> del peso total. Una casa pesa mucho cuando reúne a la vez una ola muy reciente, varias olas en las semanas anteriores y muestras por encima del techo.`;
+  el('robustez-frase').innerHTML = `Si se quitara la casa que más pesa, <b>${esc(t0.firm)}</b>, ningún partido se movería más de <b>${f2S(t0.max).slice(1)}</b> puntos (${N[t0.max_party]}). ` +
+    (big.firm !== t0.firm ? `La casa que más mueve la media no es la que más pesa, sino <b>${esc(big.firm)}</b>, con un ${f1(big.peso)} % del peso: quitarla cambiaría <b>${f2S(big.max).slice(1)}</b> puntos en ${N[big.max_party]}, porque es la que más se aparta del resto.` : 'Ninguna otra casa mueve la media más que esta.');
+  el('neff').innerHTML = `En conjunto, la media equivale a promediar unas <b>${Math.round(P.casas_efectivas)}</b> casas con el mismo peso, así que ninguna decide por sí sola.`;
+  el('tabla-robustez').innerHTML = P.robustez.map((r) => `<tr><td>${esc(r.firm)}</td><td>${f1(r.peso)}</td><td>${r.olas}</td><td>${r.dias}</td><td>${f2S(r.dPP)}</td><td>${f2S(r.dPSOE)}</td><td>${f2S(r.dVOX)}</td><td>${f2S(r.dFA)}</td></tr>`).join('');
+  function drawWeights() {
+    const box = el('grafico-pesos'); box.innerHTML = '';
+    const rows = P.casas, W = box.clientWidth || 600, bh = 9, gap = 8, H = rows.length * (bh * 2 + gap) + 40;
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Peso de cada encuestadora en la media ponderada frente a la simple');
+    const tmp = svg.append('g'); let ml = 0; rows.forEach((r) => { ml = Math.max(ml, tmp.append('text').text(r.firm).node().getComputedTextLength()); }); tmp.remove(); ml += 12;
+    const x = d3.scaleLinear().domain([0, d3.max(rows, (r) => Math.max(r.pond, r.simple))]).nice().range([ml, W - 50]);
+    svg.append('g').attr('transform', `translate(0,${H - 22})`).call(d3.axisBottom(x).ticks(5).tickFormat(d3.format('.0%'))).call((g) => g.selectAll('line,path').style('stroke', 'var(--axis)'));
+    const lg = svg.append('g').attr('transform', `translate(${ml},4)`);
+    [['Ponderada', 'var(--fg)'], ['Simple 28 días', 'var(--chart-muted)']].forEach(([t, c], i) => { lg.append('rect').attr('x', i * 120).attr('width', 10).attr('height', 10).style('fill', c); lg.append('text').attr('x', i * 120 + 15).attr('y', 9).text(t); });
+    rows.forEach((r, i) => {
+      const y0 = 22 + i * (bh * 2 + gap), g = svg.append('g');
+      g.append('text').attr('x', ml - 8).attr('y', y0 + bh + 3).attr('text-anchor', 'end').text(r.firm);
+      g.append('rect').attr('x', ml).attr('y', y0).attr('height', bh).attr('width', Math.max(0, x(r.pond) - ml)).style('fill', 'var(--fg)');
+      g.append('rect').attr('x', ml).attr('y', y0 + bh).attr('height', bh).attr('width', Math.max(0, x(r.simple) - ml)).style('fill', 'var(--chart-muted)');
+      g.append('text').attr('x', x(Math.max(r.pond, r.simple)) + 5).attr('y', y0 + bh + 3).text(d3.format('.1%')(r.pond).replace('.', ','));
+    });
+  }
+  el('metodologia').addEventListener('toggle', (e) => { if (e.target.open) drawWeights(); });
+
+  drawTrend(); drawSeats(); drawPolls('');
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { drawTrend(); drawSeats(); if (el('metodologia').open) drawWeights(); }, 150); });
+})();
+</script>
+</body>
+</html>

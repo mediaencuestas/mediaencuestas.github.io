@@ -1,5 +1,5 @@
-"""Escribe estado.json y partidos.json en public/datos y una portada mínima en public/index.html."""
-import json, os, sys
+"""Escribe estado.json y partidos.json en public/datos, copia la web (web/index.html) y un listado de ficheros (datos.html)."""
+import json, os, shutil, sys
 from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(__file__))
 from comun import COLORES, NOMBRES, PARTIDOS, SALIDA, config, en_veda, leer_encuestas, para_media
@@ -14,8 +14,13 @@ estado = {"actualizado": datetime.now(timezone.utc).isoformat(timespec="minutes"
 (SALIDA / "estado.json").write_text(json.dumps(estado, ensure_ascii=False), encoding="utf-8")
 (SALIDA / "partidos.json").write_text(json.dumps([{"party": p, "nombre": NOMBRES[p], "color": COLORES[p]} for p in PARTIDOS], ensure_ascii=False), encoding="utf-8")
 ficheros = sorted(f.name for f in SALIDA.glob("*.json"))
-(SALIDA.parent / "index.html").write_text(
+(SALIDA.parent / "datos.html").write_text(
     "<!doctype html><meta charset=utf-8><title>Datos · media de encuestas</title>"
     f"<h1>Datos de la media de encuestas</h1><p>Actualizado {estado['actualizado']} · media a {estado['fecha_media']}</p><ul>"
     + "".join(f'<li><a href="datos/{f}">{f}</a></li>' for f in ficheros) + "</ul>", encoding="utf-8")
 print("publicado:", ", ".join(ficheros))
+web = SALIDA.parent.parent / "web" / "index.html"
+if web.exists():
+    shutil.copy(web, SALIDA.parent / "index.html")
+else:
+    shutil.copy(SALIDA.parent / "datos.html", SALIDA.parent / "index.html")
