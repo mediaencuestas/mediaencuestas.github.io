@@ -1,0 +1,40 @@
+name: Cerrar propuesta de encuestas
+
+# Al aprobar («Merge») o cerrar la propuesta, borra la rama.
+# Si se cierra sin aprobar, apunta sus encuestas como descartadas para que no vuelvan a proponerse.
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  cerrar:
+    if: github.event.pull_request.head.ref == 'encuestas-nuevas'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        if: ${{ !github.event.pull_request.merged }}
+        with:
+          python-version: "3.12"
+
+      - name: Apuntar las rechazadas
+        if: ${{ !github.event.pull_request.merged }}
+        run: |
+          pip install pandas
+          git fetch origin encuestas-nuevas
+          git show origin/encuestas-nuevas:datos/encuestas.csv > /tmp/rama.csv
+          python scripts/rechazar.py /tmp/rama.csv ${{ github.event.pull_request.number }}
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add datos/descartadas.csv
+          git diff --cached --quiet || { git commit -m "Descartadas las encuestas de la propuesta #${{ github.event.pull_request.number }}"; git push origin main; }
+
+      - name: Borrar la rama
+        run: git push origin --delete encuestas-nuevas || true
