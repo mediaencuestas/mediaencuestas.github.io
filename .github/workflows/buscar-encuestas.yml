@@ -1,0 +1,63 @@
+name: Buscar encuestas nuevas
+
+# Lee Wikipedia tres veces al día y, si hay encuestas que no están en la base,
+# abre (o amplía) una pull request «Encuestas pendientes» para que las apruebes.
+on:
+  schedule:
+    - cron: "17 7,13,19 * * *"     # 08:17, 14:17 y 20:17 en Madrid (horario de invierno)
+  workflow_dispatch: {}            # botón «Run workflow» para lanzarlo a mano
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: buscar-encuestas
+  cancel-in-progress: false
+
+jobs:
+  buscar:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RAMA: encuestas-nuevas
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Preparar la rama de propuestas
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin "$RAMA" >/dev/null; then
+            git checkout -B "$RAMA" "origin/$RAMA"
+            git merge --no-edit origin/main || { echo "Conflicto con main: cierra la propuesta abierta y vuelve a lanzar"; exit 1; }
+          else
+            git checkout -b "$RAMA"
+          fi
+
+      - name: Leer Wikipedia
+        id: leer
+        run: python scripts/wikipedia.py
+
+      - name: Abrir o ampliar la propuesta
+        if: steps.leer.outputs.hay_cambios == 'si'
+        run: |
+          git add datos/encuestas.csv
+          git commit -m "${{ steps.leer.outputs.titulo }}"
+          git push origin "$RAMA"
+          PR=$(gh pr list --head "$RAMA" --state open --json number -q '.[0].number')
+          if [ -z "$PR" ]; then
+            gh pr create --base main --head "$RAMA" --title "${{ steps.leer.outputs.titulo }}" --body-file trabajo/pr.md
+          else
+            gh pr edit "$PR" --title "Encuestas pendientes de aprobar (actualizada)"
+            gh pr comment "$PR" --body-file trabajo/pr.md
+          fi
