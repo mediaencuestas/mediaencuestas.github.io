@@ -1,12 +1,19 @@
 firm,media,start,end,n,PP,PSOE,VOX,FA,PODEMOS,SALF,ERC,JUNTS,BILDU,PNV,BNG,CC,ADELANTE,fa_note,source,url,added
+40dB,Prisa,2026-11-10,2026-11-15,2500,31.5,30.3,18.0,5.4,1.1,1.7,,,,,,,,FA + Compromís (suma),Wikipedia (lector automático),https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1386000039,2026-11-16
 SocioMétrica,El Español,2026-09-01,2026-11-15,5923,32.1,27.8,19.1,6.0,1.2,2.2,2.5,1.3,1.5,0.8,1.0,0.4,1.6,FA + Compromís (suma),Wikipedia (lector automático),https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1385880239,2026-11-15
 40dB,Prisa,2026-11-10,2026-11-14,2000,31.4,29.9,18.3,5.4,1.3,1.8,,,,,,,,FA + Compromís (suma),Wikipedia (lector automático),https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1385880239,2026-11-15
 EM-Analytics,Electomanía,2026-11-09,2026-11-14,2617,30.7,26.7,19.0,7.6,1.4,2.1,2.5,1.2,1.5,0.8,0.9,0.4,1.4,FA + Compromís (suma),Wikipedia (lector automático),https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1385880239,2026-11-15
+SW Demoscopia,La Séptima,2026-10-26,2026-11-14,8500,28.6,31.7,16.9,7.3,1.7,2.0,2.8,1.3,1.4,0.8,1.1,0.4,1.5,FA+Compromís (conjunto),Wikipedia (lector automático),https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1386000039,2026-11-16
+Sondaxe,La Voz de Galicia,2026-11-10,2026-11-14,1000,30.2,26.7,17.6,7.9,2.2,,2.7,1.4,1.8,1.0,1.0,0.4,1.8,FA + Compromís (suma),Wikipedia (lector automático),https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1386000039,2026-11-16
 40dB,Prisa,2026-11-10,2026-11-13,1500,31.1,29.8,18.5,5.2,1.3,1.6,,,,,,,,FA + Compromís (suma),"Wikipedia (tabla actual, 15-11-2026)",,
 EM-Analytics,Electomanía,2026-11-09,2026-11-13,2348,30.6,26.5,18.8,7.7,1.4,2.2,2.4,1.2,1.5,0.8,1.0,0.4,1.3,FA + Compromís (suma),"Wikipedia (tabla actual, 15-11-2026)",,
+IMOP,El Confidencial,2026-11-10,2026-11-13,1000,31.5,26.9,19.0,6.9,0.9,1.6,2.9,1.1,1.7,0.9,1.3,0.5,2.2,FA+Compromís (conjunto),Wikipedia (lector automático),https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1386000039,2026-11-16
 SW Demoscopia,La Séptima,2026-10-26,2026-11-13,8000,28.5,31.7,17.1,7.3,1.7,2.0,2.8,1.3,1.4,0.8,1.0,0.4,1.5,FA+Compromís (conjunto),"Wikipedia (tabla actual, 15-11-2026)",,
 Sigma Dos,El Mundo,2026-11-03,2026-11-13,5370,31.0,25.6,19.7,7.2,,,2.7,1.3,1.4,0.8,1.1,0.4,1.9,FA + Compromís (suma),"Wikipedia (tabla actual, 15-11-2026)",,
 Sondaxe,La Voz de Galicia,2026-11-09,2026-11-13,1000,30.8,26.4,18.2,6.4,,,,,,,,,,FA+Compromís (conjunto),Wikipedia (lector automático),https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1385880239,2026-11-15
+Data10,Okdiario,2026-11-11,2026-11-12,1500,32.0,25.5,20.4,6.7,2.1,,2.4,1.4,1.3,0.7,0.9,0.4,1.7,FA+Compromís (conjunto),Wikipedia (lector automático),https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1386000039,2026-11-16
+NC Report,La Razón,2026-11-06,2026-11-12,1000,32.5,26.1,19.0,7.6,1.5,,1.9,1.6,1.4,0.8,1.0,0.4,1.8,FA+Compromís (conjunto),Wikipedia (lector automático),https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1386000039,2026-11-16
+Target Point,El Debate,2026-11-12,2026-11-12,1013,30.6,27.0,18.7,7.3,1.6,2.1,,,,,,,,FA+Compromís (conjunto),Wikipedia (lector automático),https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1386000039,2026-11-16
 EM-Analytics,Electomanía,2026-11-01,2026-11-08,2531,30.5,25.9,19.0,7.7,1.7,2.0,2.4,1.2,1.4,0.9,1.0,0.4,1.1,FA + Compromís (suma),"Wikipedia (tabla actual, 15-11-2026)",,
 SocioMétrica,El Español,2026-09-01,2026-11-08,5460,32.3,27.7,18.9,5.9,1.2,2.2,2.4,1.4,1.6,0.8,1.0,0.5,1.7,FA + Compromís (suma),"Wikipedia (tabla actual, 15-11-2026)",,
 Winston,Artículo14,2026-11-05,2026-11-08,1501,31.1,26.4,18.7,8.4,1.6,2.5,2.3,1.1,1.1,1.0,1.0,0.0,1.9,FA+Compromís (conjunto),"Wikipedia (tabla actual, 15-11-2026)",,
@@ -19,7 +26,7 @@ NC Report,La Razón,2026-11-02,2026-11-05,1000,33.0,25.6,19.3,6.9,2.4,,2.0,1.8,1
 40dB,Prisa,2026-11-02,2026-11-04,2000,31.9,29.9,18.0,5.0,1.2,2.0,,,,,,,,FA + Compromís (suma),"Wikipedia (tabla actual, 15-11-2026)",,
 Sondaxe,La Voz de Galicia,2026-11-02,2026-11-04,1200,29.7,27.3,18.6,7.1,2.2,1.6,2.9,1.4,1.5,0.7,0.9,0.5,2.3,FA+Compromís (conjunto),"Wikipedia (tabla actual, 15-11-2026)",,
 Celeste-Tel,Onda Cero,2026-10-29,2026-11-03,1100,31.8,25.7,19.2,8.0,1.9,1.6,2.2,1.5,1.4,0.9,0.8,0.5,1.2,FA + Compromís (suma),"Wikipedia (tabla actual, 15-11-2026)",,
-Data10,Okdiario,2026-11-02,2026-11-03,1500,32.4,24.7,19.8,6.9,3.1,1.5,2.3,1.5,1.3,0.7,1.0,0.4,1.3,FA+Compromís (conjunto),"Wikipedia (tabla actual, 15-11-2026)",,
+Data10,Okdiario,2026-11-02,2026-11-03,1500,32.7,24.7,19.8,6.9,3.1,1.5,2.3,1.5,1.3,0.7,1.0,0.4,1.3,FA+Compromís (conjunto),"Wikipedia (corrección, lector automático)",https://en.wikipedia.org/w/index.php?title=Opinion_polling_for_the_2026_Spanish_general_election&oldid=1386000039,
 YouGov,Ara,2026-10-26,2026-11-02,1221,29.6,25.9,20.3,9.2,1.8,,2.9,1.3,1.1,0.7,,,1.8,FA+Compromís (conjunto),"Wikipedia (tabla actual, 15-11-2026)",,
 CIS,,2026-10-07,2026-10-30,45074,25.5,33.3,18.4,6.9,1.1,1.4,3.1,1.2,1.8,0.7,1.0,0.2,1.5,FA + Compromís (suma),Wikipedia (fila CIS oficial),,
 EM-Analytics,Electomanía,2026-10-28,2026-10-30,1527,31.5,25.8,19.2,7.6,1.7,1.6,2.2,1.2,1.4,0.9,1.0,0.3,1.0,FA + Compromís (suma),"Wikipedia (tabla actual, 15-11-2026)",,
