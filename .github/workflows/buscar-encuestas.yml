@@ -1,36 +1,68 @@
-"""Resumen de todas las encuestas pendientes de aprobar (rama de propuestas frente a main) para el texto de la propuesta.
+name: Buscar encuestas nuevas
 
-Uso: python scripts/resumen_pr.py <encuestas.csv de main>   → escribe trabajo/pr.md
-"""
-import os
-import sys
+# Lee Wikipedia tres veces al día y, si hay encuestas que no están en la base,
+# abre (o amplía) una pull request «Encuestas pendientes» para que las apruebes.
+on:
+  schedule:
+    - cron: "17 7,13,19 * * *"     # 08:17, 14:17 y 20:17 en Madrid (horario de invierno)
+  workflow_dispatch: {}            # botón «Run workflow» para lanzarlo a mano
 
-import pandas as pd
+permissions:
+  contents: write
+  pull-requests: write
 
-sys.path.insert(0, os.path.dirname(__file__))
-from comun import TRABAJO, config, leer_encuestas
-from wikipedia import informe
+concurrency:
+  group: buscar-encuestas
+  cancel-in-progress: false
 
-main = pd.read_csv(sys.argv[1], parse_dates=["start", "end"])
-rama = leer_encuestas()
-clave = lambda d: list(zip(d.firm, d.start, d.end))
-en_main = set(clave(main))
-nuevas = rama[[k not in en_main for k in clave(rama)]]
-correcciones = []
-cols = ["PP", "PSOE", "VOX", "FA"]
-m = main.set_index(["firm", "start", "end"])
-for i, r in rama[[k in en_main for k in clave(rama)]].iterrows():
-    b = m.loc[(r.firm, r.start, r.end)]
-    if isinstance(b, pd.DataFrame):
-        b = b.iloc[0]
-    dif = [p for p in cols if pd.notna(r[p]) and pd.notna(b[p]) and abs(r[p] - b[p]) > 0.05]
-    if dif:
-        idx = main[(main.firm == r.firm) & (main.start == r.start) & (main.end == r.end)].index[0]
-        correcciones.append((idx, r, dif))
-TRABAJO.mkdir(exist_ok=True)
-(TRABAJO / "pr.md").write_text(informe(nuevas, correcciones, main, config()), encoding="utf-8")
-n = len(nuevas)
-titulo = f"{n} encuesta{'s' if n != 1 else ''} pendiente{'s' if n != 1 else ''} de aprobar"
-if correcciones:
-    titulo += f" (+{len(correcciones)} corrección{'es' if len(correcciones) > 1 else ''})"
-print(titulo)
+jobs:
+  buscar:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RAMA: encuestas-nuevas
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Preparar la rama de propuestas
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin "$RAMA" >/dev/null; then
+            git checkout -B "$RAMA" "origin/$RAMA"
+            git merge --no-edit origin/main || { echo "Conflicto con main: cierra la propuesta abierta y vuelve a lanzar"; exit 1; }
+          else
+            git checkout -b "$RAMA"
+          fi
+
+      - name: Leer Wikipedia
+        id: leer
+        run: python scripts/wikipedia.py
+
+      - name: Guardar las encuestas nuevas en la rama
+        if: steps.leer.outputs.hay_cambios == 'si'
+        run: |
+          git add datos/encuestas.csv
+          git commit -m "${{ steps.leer.outputs.titulo }}"
+          git push origin "$RAMA"
+
+      - name: Abrir o actualizar la propuesta
+        run: |
+          if git diff --quiet origin/main -- datos/encuestas.csv; then echo "Nada pendiente de aprobar"; exit 0; fi
+          git show origin/main:datos/encuestas.csv > /tmp/main.csv
+          TITULO=$(python scripts/resumen_pr.py /tmp/main.csv)
+          PR=$(gh pr list --head "$RAMA" --state open --json number -q '.[0].number')
+          if [ -z "$PR" ]; then
+            gh pr create --base main --head "$RAMA" --title "$TITULO" --body-file trabajo/pr.md
+          else
+            gh pr edit "$PR" --title "$TITULO" --body-file trabajo/pr.md
+          fi
